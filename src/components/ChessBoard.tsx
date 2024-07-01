@@ -141,7 +141,7 @@ const ChessBoard = () => {
 
         const previousBoard = undoStack[undoStack.length - 1];
         const lastMove = moveHistory[moveHistory.length - 1];
-        
+
         setUndoStack(undoStack.slice(0, -1));
         setBoard(previousBoard);
         setSelectedPiece(null);
@@ -205,68 +205,85 @@ const ChessBoard = () => {
 
     return (
         <>
-            <div className="flex flex-col items-center justify-center gap-10">
-                <h1>Welcome to ChessGame :)</h1>
-                <h2>Status: {gameStatus}</h2>
-                <h2>Turn: {turn === 'w' ? 'White' : 'Black'}</h2>
-                <div className="grid grid-cols-8 grid-rows-8">
-                    {board.map((row, rowIndex) => {
-                        return row.map((cell, colIndex) => {
-                            const isPossibleMove = possibleMoves.some(move => move.row === rowIndex && move.col === colIndex);
-                            return (
-                                <Square
-                                    key={`${rowIndex}-${colIndex}`}
-                                    cellDetails={{ row: rowIndex, col: colIndex }}
-                                    cellPiece={cell}
-                                    isPossibleMove={isPossibleMove}
-                                    onClick={() => handleSquareClick(rowIndex, colIndex, cell)}
-                                />
-                            );
-                        });
-                    })}
+            <div className="flex flex-col gap-14 items-center">
+                <div className="text-2xl md:text-4xl font-bold"> Welcome to ChessGame :)</div>
+                <div className="flex flex-col items-center justify-center gap-5 md:gap-10">
+                    <div className="flex gap-10">
+                        <h2 className="text-xl md:text-2xl">Status: {gameStatus}</h2>
+                        <h2 className="text-xl md:text-2xl">Turn: {turn === 'w' ? 'White' : 'Black'}</h2>
+                    </div>
+                    <div className="grid grid-cols-8 grid-rows-8 border-black border-2">
+                        {board.map((row, rowIndex) => {
+                            return row.map((cell, colIndex) => {
+                                const isPossibleMove = possibleMoves.some(move => move.row === rowIndex && move.col === colIndex);
+                                return (
+                                    <Square
+                                        key={`${rowIndex}-${colIndex}`}
+                                        cellDetails={{ row: rowIndex, col: colIndex }}
+                                        cellPiece={cell}
+                                        isPossibleMove={isPossibleMove}
+                                        onClick={() => handleSquareClick(rowIndex, colIndex, cell)}
+                                    />
+                                );
+                            });
+                        })}
+                    </div>
+                    <div className="flex flex-col gap-5">
+
+                        <div className="flex justify-between w-full">
+                            <div className="text-xl md:text-2xl">White Timer: {formatTime(whiteTime)}</div>
+                            <div className="text-xl md:text-2xl">Black Timer: {formatTime(blackTime)}</div>
+                        </div>
+                        <div className="flex gap-8 text-xl md:text-2xl">
+                            <button onClick={restartGame} className="btn hover:text-blue-800">Restart Game</button>
+                            <button onClick={giveUp} className="btn hover:text-blue-800">Give Up</button>
+                            <button onClick={undoMove} className="btn hover:text-blue-800">Undo Move</button>
+                            <button onClick={toggleHistoryVisibility} className="btn hover:text-blue-800">
+                                {isHistoryVisible ? 'Hide History' : 'Show History'}
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
-                <div className="flex justify-between w-full">
-                    <div>White Timer: {formatTime(whiteTime)}</div>
-                    <div>Black Timer: {formatTime(blackTime)}</div>
-                </div>
-                <div className="flex gap-4 mt-4">
-                    <button onClick={restartGame} className="btn">Restart Game</button>
-                    <button onClick={giveUp} className="btn">Give Up</button>
-                    <button onClick={undoMove} className="btn">Undo Move</button>
-                    <button onClick={toggleHistoryVisibility} className="btn">
-                        {isHistoryVisible ? 'Hide History' : 'Show History'}
-                    </button>
-                </div>
+                {isHistoryVisible && (
+                    <div className="p-4 border rounded bg-gray-100 ">
+                        <h3>Move History:</h3>
+                        <ul>
+                            {moveHistory.slice().reverse().map((move, index) => (
+                                <li key={index}>
+                                    {move.piece} moved from ({move.from.row}, {move.from.col}) to ({move.to.row}, {move.to.col})
+                                    {move.captured ? `, capturing ${move.captured}` : ''}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </div>
-            {isHistoryVisible && (
-                <div className="mt-4 p-4 border rounded bg-gray-100">
-                    <h3>Move History:</h3>
-                    <ul>
-                        {moveHistory.map((move, index) => (
-                            <li key={index}>
-                                {index + 1}. {move.piece} moved from ({move.from.row}, {move.from.col}) to ({move.to.row}, {move.to.col})
-                                {move.captured ? `, capturing ${move.captured}` : ''}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
         </>
     );
 }
 
 const Square = ({ cellDetails, cellPiece, isPossibleMove, onClick }: { cellDetails: { row: number, col: number }, cellPiece: string, isPossibleMove: boolean, onClick: () => void }) => {
     const { row, col } = cellDetails;
-    const color = (row + col) % 2 === 0 ? 'bg-gray-300' : 'bg-gray-500';
-    const highlightClass = isPossibleMove ? 'bg-green-300 border border-black' : '';
+    const color = (row + col) % 2 === 0 ? 'bg-amber-800' : 'bg-yellow-600';
+    const highlightClass = isPossibleMove ? 'bg-green-800 border border-black' : '';
 
     return (
-        <div className={`${color} ${highlightClass} w-14 h-14 flex items-center justify-center`} onClick={onClick}>
-            {cellPiece !== '--' &&
-                <div>
-                    <Image src={`/${cellPiece}.svg`} width={50} height={50} alt={`${cellPiece}`} />
+        <div
+            className={`${color} ${highlightClass} w-12 h-12 md:w-20 md:h-20 flex items-center justify-center`}
+            onClick={onClick}
+        >
+            {cellPiece !== '--' && (
+                <div className="relative w-full h-full flex items-center justify-center">
+                    <Image
+                        src={`/${cellPiece}.svg`}
+                        alt={`${cellPiece}`}
+                        layout="fill"
+                        objectFit="contain"
+                        className="w-8 h-8 md:w-14 md:h-14"
+                    />
                 </div>
-            }
+            )}
         </div>
     );
 }
