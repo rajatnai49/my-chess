@@ -199,10 +199,6 @@ const getBishopMoves = (row: number, col: number, currentBoard: string[][]): Mov
     return moves;
 };
 
-const getQueenMoves = (row: number, col: number, currentBoard: string[][]): Move[] => {
-    return [...getRookMoves(row, col, currentBoard), ...getBishopMoves(row, col, currentBoard)];
-};
-
 const getKingMoves = (row: number, col: number, currentBoard: string[][]): Move[] => {
     const moves: Move[] = [];
     const piece = currentBoard[row][col];
@@ -248,16 +244,24 @@ const getPossibleMoves = (row: number, col: number, piece: string, currentBoard:
 };
 
 
+const getQueenMoves = (row: number, col: number, currentBoard: string[][]): Move[] => {
+    const rookMoves = getRookMoves(row, col, currentBoard);
+    const bishopMoves = getBishopMoves(row, col, currentBoard);
+    console.log('Rook Moves:', rookMoves);
+    console.log('Bishop Moves:', bishopMoves);
+    return [...rookMoves, ...bishopMoves];
+};
+
 const isInCheck = (currentBoard: string[][], kingRow: number, kingCol: number, isWhite: boolean): 'check' | 'checkmate' | null => {
     const opponentColor = isWhite ? 'b' : 'w';
 
-    const getAllPossibleMoves = (currentBoard: string[][], isWhite: boolean): Move[] => {
+    const getAllPossibleMoves = (board: string[][], color: boolean): Move[] => {
         const moves: Move[] = [];
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
-                const piece = currentBoard[row][col];
-                if (piece !== '--' && piece.charAt(0) === (isWhite ? 'w' : 'b')) {
-                    moves.push(...getPossibleMoves(row, col, piece, currentBoard));
+                const piece = board[row][col];
+                if (piece !== '--' && piece.charAt(0) === (color ? 'w' : 'b')) {
+                    moves.push(...getPossibleMoves(row, col, piece, board));
                 }
             }
         }
@@ -268,32 +272,28 @@ const isInCheck = (currentBoard: string[][], kingRow: number, kingCol: number, i
     const isKingInCheck = allOpponentMoves.some(move => move.row === kingRow && move.col === kingCol);
 
     if (isKingInCheck) {
-        const possibleMoves: Move[] = [];
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const piece = currentBoard[row][col];
                 if (piece !== '--' && piece.charAt(0) === (isWhite ? 'w' : 'b')) {
-                    possibleMoves.push(...getPossibleMoves(row, col, piece, currentBoard));
+                    const moves = getPossibleMoves(row, col, piece, currentBoard);
+                    for (const move of moves) {
+                        const tempBoard = currentBoard.map(r => r.slice());
+                        tempBoard[move.row][move.col] = tempBoard[kingRow][kingCol];
+                        tempBoard[kingRow][kingCol] = '--';
+
+                        if (!isInCheck(tempBoard, move.row, move.col, isWhite)) {
+                            return 'check';
+                        }
+                    }
                 }
             }
         }
-
-        for (const move of possibleMoves) {
-            const tempBoard = currentBoard.map(row => row.slice()); 
-            tempBoard[move.row][move.col] = tempBoard[kingRow][kingCol];
-            tempBoard[kingRow][kingCol] = '--';
-
-            if (!isInCheck(tempBoard, move.row, move.col, isWhite)) {
-                return 'check';
-            }
-        }
-
-        return 'checkmate'; 
+        return 'checkmate';
     }
 
     return null;
 };
-
 
 const isCheckmate = (currentBoard: string[][], kingRow: number, kingCol: number, isWhite: boolean): boolean => {
     if (!isInCheck(currentBoard, kingRow, kingCol, isWhite)) {
@@ -311,7 +311,7 @@ const isCheckmate = (currentBoard: string[][], kingRow: number, kingCol: number,
     }
 
     for (const move of possibleMoves) {
-        const tempBoard = currentBoard.map(row => row.slice()); // Copy the board
+        const tempBoard = currentBoard.map(r => r.slice()); 
         tempBoard[move.row][move.col] = tempBoard[kingRow][kingCol];
         tempBoard[kingRow][kingCol] = '--';
 
