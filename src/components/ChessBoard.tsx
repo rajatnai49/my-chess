@@ -270,14 +270,14 @@ const Square = ({ cellDetails, cellPiece, isPossibleMove, onClick }: { cellDetai
 
     return (
         <div
-            className={`${color} ${highlightClass} w-12 h-12 md:w-20 md:h-20 flex items-center justify-center`}
+            className={`${isPossibleMove ? highlightClass : color }  w-12 h-12 md:w-20 md:h-20 flex items-center justify-center`}
             onClick={onClick}
         >
             {cellPiece !== '--' && (
                 <div className="relative w-full h-full flex items-center justify-center">
                     <Image
                         src={`/${cellPiece}.svg`}
-                        alt={`${cellPiece}`}
+                        alt={cellPiece}
                         layout="fill"
                         objectFit="contain"
                         className="w-8 h-8 md:w-14 md:h-14"
