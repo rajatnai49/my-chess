@@ -5,17 +5,7 @@ import { getPossibleMoves, isInCheck, getKingPosition } from "../utils/pieceMove
 import Image from "next/image";
 
 const ChessBoard = () => {
-    const [board, setBoard] = useState([
-        ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
-        ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
-        ['wr', 'wn', 'wb', 'wq', 'wk', 'wb', 'wn', 'wr'],
-    ]);
-
+    const [board, setBoard] = useState<string[][]>([]);
     const [selectedPiece, setSelectedPiece] = useState<{ row: number, col: number } | null>(null);
     const [possibleMoves, setPossibleMoves] = useState<{ row: number, col: number }[]>([]);
     const [turn, setTurn] = useState<'w' | 'b'>('w');
@@ -24,8 +14,50 @@ const ChessBoard = () => {
     const [blackTime, setBlackTime] = useState<number>(600);
     const [whiteTime, setWhiteTime] = useState<number>(600);
     const [gameStatus, setGameStatus] = useState<string>('ongoing');
+    const [isLoaded, setIsLoaded] = useState<boolean>(false); // is board loaded
 
     useEffect(() => {
+        const initializeBoard = () => {
+            const savedState = localStorage.getItem('chessGameState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                setBoard(state.board || defaultBoard);
+                setSelectedPiece(state.selectedPiece || null);
+                setPossibleMoves(state.possibleMoves || []);
+                setTurn(state.turn || 'w');
+                setHistory(state.history || []);
+                setUndoStack(state.undoStack || []);
+                setBlackTime(state.blackTime || 600);
+                setWhiteTime(state.whiteTime || 600);
+                setGameStatus(state.gameStatus || 'ongoing');
+            } else {
+                setBoard(defaultBoard);
+                setTurn('w');
+            }
+            setIsLoaded(true); 
+        };
+
+        initializeBoard();
+    }, []);
+
+    useEffect(() => {
+        if (isLoaded) {
+            localStorage.setItem('chessGameState', JSON.stringify({
+                board,
+                selectedPiece,
+                possibleMoves,
+                turn,
+                history,
+                undoStack,
+                blackTime,
+                whiteTime,
+                gameStatus
+            }));
+        }
+    }, [board, selectedPiece, possibleMoves, turn, history, undoStack, blackTime, whiteTime, gameStatus, isLoaded]);
+
+    useEffect(() => {
+        if (!isLoaded) return; // is not loaded yet
         const interval = setInterval(() => {
             if (gameStatus === 'ongoing') {
                 if (turn === 'w') {
@@ -49,7 +81,7 @@ const ChessBoard = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [turn, gameStatus]);
+    }, [turn, gameStatus, isLoaded]);
 
     const handleSquareClick = (row: number, col: number, piece: string) => {
         if (gameStatus !== 'ongoing') return;
@@ -69,7 +101,6 @@ const ChessBoard = () => {
         const newBoard = board.map(row => [...row]);
         const { row: oldRow, col: oldCol } = selectedPiece;
 
-        // push to the stack
         setUndoStack(prev => [...prev, board]);
 
         newBoard[newRow][newCol] = newBoard[oldRow][oldCol];
@@ -93,7 +124,6 @@ const ChessBoard = () => {
         setSelectedPiece(null);
         setPossibleMoves([]);
         setTurn(prev => (prev === 'w' ? 'b' : 'w'));
-        // revert the history
         setHistory(prev => prev.slice(0, -1)); 
     };
 
@@ -119,16 +149,7 @@ const ChessBoard = () => {
     };
 
     const restartGame = () => {
-        setBoard([
-            ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
-            ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
-            ['wr', 'wn', 'wb', 'wq', 'wk', 'wb', 'wn', 'wr'],
-        ]);
+        setBoard(defaultBoard);
         setSelectedPiece(null);
         setPossibleMoves([]);
         setTurn('w');
@@ -142,6 +163,10 @@ const ChessBoard = () => {
     const giveUp = () => {
         setGameStatus(turn === 'w' ? 'black wins' : 'white wins');
     };
+
+    if (!isLoaded) {
+        return <div>Loading...</div>; 
+    }
 
     return (
         <div className="flex flex-col items-center justify-center gap-10">
@@ -198,5 +223,16 @@ const formatTime = (time: number) => {
     const seconds = time % 60;
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
+
+const defaultBoard = [
+    ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
+    ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
+    ['--', '--', '--', '--', '--', '--', '--', '--'],
+    ['--', '--', '--', '--', '--', '--', '--', '--'],
+    ['--', '--', '--', '--', '--', '--', '--', '--'],
+    ['--', '--', '--', '--', '--', '--', '--', '--'],
+    ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
+    ['wr', 'wn', 'wb', 'wq', 'wk', 'wb', 'wn', 'wr'],
+];
 
 export default ChessBoard;
